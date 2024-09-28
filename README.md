@@ -107,3 +107,16 @@ bash ./coca_clip_opda.sh
 # Results are saved in ./logs/main/uni_modal/adapter/
 bash ./coca_adapter_opda.sh
 ```
+
+## Citation
+```
+@misc{liu2024cocaclassifierorientedcalibrationtextual,
+      title={COCA: Classifier-Oriented Calibration via Textual Prototype for Source-Free Universal Domain Adaptation}, 
+      author={Xinghong Liu and Yi Zhou and Tao Zhou and Chun-Mei Feng and Ling Shao},
+      year={2024},
+      eprint={2308.10450},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV},
+      url={https://arxiv.org/abs/2308.10450}, 
+}
+```
