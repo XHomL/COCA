@@ -119,19 +119,7 @@ class SFUniDADataset(Dataset):
 
     def load_img(self, idx):
         img_f, img_label = self.imgs[idx]
-        if "officehome" in self.dataset and self.preload_flg:
-            train_img = self.train_imgs[idx]
-            if self.test_imgs is not None:
-                test_img = self.test_imgs[idx]
-            else:
-                test_img = self.train_imgs[idx]
-        elif "visda" in self.dataset and self.preload_flg:
-            train_img = self.train_imgs[idx]
-            if self.test_imgs is not None:
-                test_img = self.test_imgs[idx]
-            else:
-                test_img = self.train_imgs[idx]
-        elif "domainnet" in self.dataset and self.preload_flg:
+        if self.preload_flg:
             train_img = self.train_imgs[idx]
             if self.test_imgs is not None:
                 test_img = self.test_imgs[idx]

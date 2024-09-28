@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import numpy as np
 import torch
 import torch.nn.functional as F
@@ -22,17 +24,17 @@ from utils.net_utils import (set_random_seed,
 torch.multiprocessing.set_sharing_strategy('file_system')
 
 
-def load_full_text_batch(text_feature_loader, args):
-    text_feature_iter = iter(text_feature_loader)
-    text_feature, text_label, _ = next(text_feature_iter)
+def load_full_text_batch(text_features_loader, args):
+    text_features_iter = iter(text_features_loader)
+    text_feature, text_label, _ = next(text_features_iter)
     text_feature_batch = text_feature.cuda()
     text_label_batch = text_label.cuda()
     while text_feature_batch.shape[0] < args.batch_size:
         try:
-            text_feature, text_label, _ = next(text_feature_iter)
+            text_feature, text_label, _ = next(text_features_iter)
         except StopIteration:
-            text_feature_iter = iter(text_feature_loader)
-            text_feature, text_label, _ = next(text_feature_iter)
+            text_features_iter = iter(text_features_loader)
+            text_feature, text_label, _ = next(text_features_iter)
         text_feature_batch = torch.cat((text_feature_batch, text_feature.cuda()), dim=0)
         text_label_batch = torch.cat((text_label_batch, text_label.cuda()), dim=0)
     text_feature_batch = text_feature_batch[:args.batch_size]
@@ -41,34 +43,34 @@ def load_full_text_batch(text_feature_loader, args):
     return text_feature_batch, text_label_batch
 
 
-def compute_image_loss(img_train, img_psd_label, model):
-    _, img_logit = model(img_train)
-    img_loss = torch.sum(-img_psd_label * torch.log(img_logit.softmax(dim=-1) + 1e-5), dim=-1).mean()
+def compute_image_loss(img, img_psd_label, model):
+    _, logit = model(img)
+    img_loss = torch.sum(-img_psd_label * torch.log(logit.softmax(dim=-1) + 1e-5), dim=-1).mean()
     return img_loss
 
 
-def compute_text_loss(args, model, text_feature_loader):
-    text_feature, text_label = load_full_text_batch(text_feature_loader, args)
-    _, text_logit = model(text_feature, is_text=True)
-    text_onehot_label = F.one_hot(text_label, num_classes=args.num_classes)
-    text_pred_loss = torch.sum(-text_onehot_label * torch.log(text_logit.softmax(dim=-1) + 1e-5), dim=-1).mean()
-    return text_pred_loss
+def compute_text_loss(args, model, text_features_loader):
+    feature, label = load_full_text_batch(text_features_loader, args)
+    _, logit = model(feature, is_text=True)
+    onehot_label = F.one_hot(label, num_classes=args.num_classes)
+    text_loss = torch.sum(-onehot_label * torch.log(logit.softmax(dim=-1) + 1e-5), dim=-1).mean()
+    return text_loss
 
 
 def compute_masking_loss(img_idx,
                          img_psd_labels,
-                         img_train,
+                         img,
                          iter_idx,
                          masking,
                          model,
                          teacher):
     teacher.update_weights(model, iter_idx)
-    _, _, teacher_pred = teacher(img_train)
-    mask_img_train = masking(img_train)
-    _, mask_img_logit = model(mask_img_train)
+    _, _, teacher_pred = teacher(img)
+    masked_img = masking(img)
+    _, masked_img_logit = model(masked_img)
     pos_mask = get_entropy(img_psd_labels[img_idx]) < 0.05
     pos_mask = pos_mask.long()
-    ce_loss = torch.sum(-teacher_pred * torch.log(mask_img_logit.softmax(dim=-1) + 1e-5), dim=-1)
+    ce_loss = torch.sum(-teacher_pred * torch.log(masked_img_logit.softmax(dim=-1) + 1e-5), dim=-1)
     mask_loss = torch.mean(ce_loss * pos_mask)
     return mask_loss
 
@@ -145,23 +147,24 @@ def main(args):
     optimizer = create_optimizer(model, args)
 
     text_features_loader = create_text_features_loader(args)
-    train_img_loader, val_img_loader = create_img_loaders(args)
+    train_imgs_loader, val_imgs_loader = create_img_loaders(args)
 
-    evaluate_source_model(model, val_img_loader, args)
+    evaluate_source_model(model, val_imgs_loader, args)
 
     print_training_prompt(args)
 
     model.eval()
-    img_psd_labels = create_pseudo_labels_via_textual_prototypes(val_img_loader, model, args)
+    img_psd_labels = create_pseudo_labels_via_textual_prototypes(val_imgs_loader, model, args)
     for epoch_idx in tqdm(range(args.epochs), ncols=60):
         # Train on target domain
-        train(args, model, train_img_loader, text_features_loader, optimizer, teacher, masking, img_psd_labels,
+        train(args, model, train_imgs_loader, text_features_loader, optimizer, teacher, masking, img_psd_labels,
               epoch_idx)
-        test(args, model, val_img_loader, src_flg=False)
+        test(args, model, val_imgs_loader, src_flg=False)
 
 
 if __name__ == "__main__":
     args = build_adaptation_config()
+    args.model_name = Path(__file__).stem
     set_random_seed(args.seed)
     print(f'args.preload_flag: {args.preload_flag}')
     main(args)

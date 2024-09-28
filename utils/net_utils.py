@@ -118,7 +118,7 @@ def create_pseudo_labels_via_textual_prototypes(img_loader,
 def evaluate_pseudo_labels(img_loader,
                            psd_labels,
                            args):
-    gt_labels = load_labels(img_loader)
+    gt_labels = load_image_labels(img_loader)
     img_pred_labels = psd_labels.argmax(dim=1).cpu()
     unk_indices = (get_entropy(psd_labels) > 0.05)
     img_pred_labels[unk_indices] = args.num_classes
@@ -220,25 +220,25 @@ def load_textual_prototypes(args):
     return textual_protos
 
 
-def extract_image_features(img_test_loader, model):
-    img_features = []
-    for _, img_test, _, _ in tqdm(img_test_loader, ncols=60):
-        img_test = img_test.cuda()
-        img_feature, img_logit = model(img_test)
-        img_features.append(img_feature.cpu())
-    img_features = torch.cat(img_features, dim=0)  # [N, D]
-    img_features = img_features / torch.norm(img_features, p=2, dim=1, keepdim=True)
-    return img_features
+def extract_image_features(loader, model):
+    features = []
+    for _, img, _, _ in tqdm(loader, ncols=60):
+        img = img.cuda()
+        feature, logit = model(img)
+        features.append(feature.cpu())
+    features = torch.cat(features, dim=0)  # [N, D]
+    features = features / torch.norm(features, p=2, dim=1, keepdim=True)
+    return features
 
 
 @torch.no_grad()
-def test(args, model, img_loader_test, src_flg=False):
+def test(args, model, loader, src_flg=False):
     model.eval()
 
     class_list = get_class_list(args, src_flg)
     open_flg = get_open_flag(args, src_flg)
-    pred_probs = get_prediction_probabilities(img_loader_test, model)
-    gt_labels = load_labels(img_loader_test)
+    pred_probs = predict(loader, model)
+    gt_labels = load_image_labels(loader)
 
     results = get_performance_results(
         class_list,
@@ -301,27 +301,27 @@ def get_class_list(args, src_flg):
         return args.target_class_list
 
 
-def get_prediction_probabilities(img_loader_test, model):
-    pred_labels = []
-    for _, img_test, _, _ in tqdm(img_loader_test, ncols=60):
-        img_test = img_test.cuda()
-        _, img_logit = model(img_test)
-        pred_labels.append(img_logit.softmax(dim=-1).cpu())
-    pred_labels = torch.cat(pred_labels, dim=0)  # [N, C]
-    return pred_labels
+def predict(loader, model):
+    probs = []
+    for _, img, _, _ in tqdm(loader, ncols=60):
+        img = img.cuda()
+        _, logit = model(img)
+        probs.append(logit.softmax(dim=-1).cpu())
+    probs = torch.cat(probs, dim=0)  # [N, C]
+    return probs
 
 
-def load_labels(img_loader_test):
-    gt_labels = []
-    for _, _, img_label, _ in tqdm(img_loader_test, ncols=60):
-        gt_labels.append(img_label)
-    gt_labels = torch.cat(gt_labels, dim=0)  # [N]
-    return gt_labels
+def load_image_labels(loader):
+    labels = []
+    for _, _, label, _ in tqdm(loader, ncols=60):
+        labels.append(label)
+    labels = torch.cat(labels, dim=0)  # [N]
+    return labels
 
 
-def evaluate_source_model(model, img_loader_test, args):
+def evaluate_source_model(model, loader, args):
     notation = "\n=======================================================\n"
     notation += f"EVALUATING SOURCE MODEL ON THE TARGET:{args.target,} BASED ON SOURCE:{args.source}\n"
     notation += "======================================================="
     args.logger.info(notation)
-    test(args, model, img_loader_test, src_flg=False)
+    test(args, model, loader, src_flg=False)

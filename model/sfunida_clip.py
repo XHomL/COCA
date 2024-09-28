@@ -35,11 +35,11 @@ class SFUniDACLIP(nn.Module):
             img_feature = self.img_encoder(inputs)
             if self.args.img_layer_idx != 0:
                 img_feature = self.partial_model(img_feature)
-            logit = self.classifier(img_feature)
+            img_logit = self.classifier(img_feature)
 
-            return img_feature, logit
+            return img_feature, img_logit
         else:
             text_feature = inputs
-            logit = self.classifier(text_feature)
+            text_logit = self.classifier(text_feature)
 
-            return text_feature, logit
+            return text_feature, text_logit

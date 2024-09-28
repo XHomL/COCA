@@ -96,15 +96,15 @@ bash ./source_model_adapter_opda.sh
 After source model training, you can utilize the plug-and-play COCA method to adapt the classifier to target domains in OPDA:
 ```
 # Cross-Modal Linear Probing (CMLP) + COCA, and the classifier is a single linear layer.
-# Results are saved in ./logs/main/cross_modal/linear/
+# Results are saved in ./logs/coca/cross_modal/linear/
 bash ./coca_cmlp_opda.sh
 
 # Linear Probe CLIP + COCA, and the classifier is a single linear layer.
-# Results are saved in ./logs/main/uni_modal/linear/
+# Results are saved in ./logs/coca/uni_modal/linear/
 bash ./coca_clip_opda.sh
 
 # CLIP-Adapter + COCA, and the classifier is the adapter module.
-# Results are saved in ./logs/main/uni_modal/adapter/
+# Results are saved in ./logs/coca/uni_modal/adapter/
 bash ./coca_adapter_opda.sh
 ```
 

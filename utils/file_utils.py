@@ -74,7 +74,7 @@ def cm_analysis(y_true, y_pred, filename, labels, classes, ymap=None, figsize=(1
 
 def get_log_dir(args):
     log_dir = os.path.join("logs",
-                           "main",
+                           args.model_name,
                            args.modality,
                            args.classifier_head,
                            f"encoder_{get_backbone_name(args.clip_encoder)}",
