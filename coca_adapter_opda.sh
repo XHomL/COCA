@@ -13,9 +13,9 @@ python coca.py --classifier-head adapter --modality uni_modal --dataset officeho
 
 python coca.py --classifier-head adapter --modality uni_modal --dataset visda --source train --target validation --task OPDA
 
-python coca.py --classifier-head adapter --modality uni_modal --dataset domainnet --sourcepainting--target real --task OPDA
-python coca.py --classifier-head adapter --modality uni_modal --dataset domainnet --sourcepainting--target sketch --task OPDA
-python coca.py --classifier-head adapter --modality uni_modal --dataset domainnet --source real --targetpainting--task OPDA
+python coca.py --classifier-head adapter --modality uni_modal --dataset domainnet --source painting --target real --task OPDA
+python coca.py --classifier-head adapter --modality uni_modal --dataset domainnet --source painting --target sketch --task OPDA
+python coca.py --classifier-head adapter --modality uni_modal --dataset domainnet --source real --target painting --task OPDA
 python coca.py --classifier-head adapter --modality uni_modal --dataset domainnet --source real --target sketch --task OPDA
-python coca.py --classifier-head adapter --modality uni_modal --dataset domainnet --source sketch --targetpainting--task OPDA
+python coca.py --classifier-head adapter --modality uni_modal --dataset domainnet --source sketch --target painting --task OPDA
 python coca.py --classifier-head adapter --modality uni_modal --dataset domainnet --source sketch --target real --task OPDA
